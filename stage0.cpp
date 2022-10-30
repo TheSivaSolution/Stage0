@@ -16,7 +16,7 @@ Compiler(char **argv) // constructor
 void createListingHeader()
 {
    time_t now = time (NULL);
-   listingFile << left << "STAGE0:\t" << "Trevor Smith, Seokhee Han" << ctime(&now) << endl;
+   listingFile << left << "STAGE0:  Trevor Smith, Seokhee Han" << ctime(&now) << endl;
    listingFile << left << setw(15) "LINE NO:" << "SOURCE STATEMENT" << endl;
    
 }
@@ -24,6 +24,14 @@ void createListingHeader()
 void parser()
 {
    
+   nextChar();
+   
+   if (nextToken() != "program")
+   {
+      processError("keyword program expected");
+   }
+   
+   prog();
 }
 
 void createListingTrailer()
