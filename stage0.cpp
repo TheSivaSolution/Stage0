@@ -238,3 +238,65 @@ string ids()          // stage 0, production 8
  	}
  	return tempString;
 }
+
+void insert(string externalName, storeTypes inType, modes inMode,
+              string inValue, allocation inAlloc, int inUnits)
+{
+	
+}
+
+storeTypes whichType(string name) // tells which data type a name has
+{
+	
+}
+
+string whichValue(string name) // tells which value a name has
+{
+	
+}
+
+void code(string op, string operand1 = "", string operand2 = "")
+{
+	
+}
+
+void emit(string label = "", string instruction = "", string operands = "",
+            string comment = "")
+{
+	
+}
+
+void emitPrologue(string progName, string = "")
+{
+	
+}
+
+void emitEpilogue(string = "", string = "")
+{
+	
+}
+
+void emitStorage()
+{
+	
+}
+
+char nextChar() // returns the next character or END_OF_FILE marker
+{
+	
+}
+
+string nextToken() // returns the next token or END_OF_FILE marker
+{
+	
+}
+
+string genInternalName(storeTypes stype) const
+{
+	
+}
+
+void processError(string err)
+{
+	
+}
