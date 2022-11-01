@@ -188,7 +188,7 @@ void varStmts()       // stage 0, production 7
 	cout << ">>VARSTMTS token " << token << endl;
 
 	nextToken();
-	//if (nextToken() != "integer"  && nextToken()  != "boolean")
+	
 	if (token != "integer"  &&token  != "boolean")
  		processError("illegal type follows \":\"");
 
@@ -199,8 +199,6 @@ void varStmts()       // stage 0, production 7
  		processError("semicolon expected");
 		
 	cout << ">>VARSTMTS token1 " << token << endl;
-	// TODO
-	//storeTypes _type = whichType(y);
 	
  	insert(	
 		x,	
