@@ -189,7 +189,7 @@ void varStmts()       // stage 0, production 7
 
 	nextToken();
 	
-	if (token != "integer"  &&token  != "boolean")
+	if (token != "integer"  && token  != "boolean")
  		processError("illegal type follows \":\"");
 
 	cout << ">>VARSTMTS token " << token << endl;
