@@ -1,27 +1,43 @@
+// Trevor Smith & Seokhee Han
+// CS 4301
+// Stage 0
 
-Compiler(char **argv) // constructor
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <map>
+#include <stage0.h>
+#include <cstring>
+#include <cstdlib>
+#include <sstream>
+#include <iomanip>
+#include <ctime>
+
+using namespace std;
+
+Compiler::Compiler(char **argv) // constructor
 {
    sourceFile.open(argv[1]);
    listingFile.open(argv[2]);
    objectFile.open(argv[3]);
 }
 
-~Compiler()           // destructor
+Compiler::~Compiler()           // destructor
 {
    sourceFile.close();
    listingFile.close();
    objectFile.close();
 }
 
-void createListingHeader()
+void Compiler::createListingHeader()
 {
    time_t now = time (NULL);
-   listingFile << left << "STAGE0:  Trevor Smith, Seokhee Han" << ctime(&now) << endl;
-   listingFile << left << setw(15) "LINE NO:" << "SOURCE STATEMENT" << endl;
+   listingFile << left << "STAGE0:  Trevor Smith, Seokhee Han\t" << ctime(&now) << endl;
+   listingFile << left << setw(15) << "LINE NO:" << "SOURCE STATEMENT" << endl;
    
 }
 
-void parser()
+void Compiler::parser()
 {
    
    nextChar();
@@ -34,14 +50,14 @@ void parser()
    prog();
 }
 
-void createListingTrailer()
+void Compiler::createListingTrailer()
 {
-   listingFile << endl << setw(28) << left << "COMPILATION TERMINATED" << errorCount << " ERROR ENCOUNTERED" << endl;
+   listingFile << endl << setw(15) << left << "COMPILATION TERMINATED" << errorCount << " ERROR ENCOUNTERED" << endl;
 }
 
 
 // Methods implementing the grammar productions
-void prog()           // stage 0, production 1
+void Compiler::prog()           // stage 0, production 1
 {
    if (token != "program")
 		processError("keyword \"program\" expected");
@@ -64,7 +80,7 @@ void prog()           // stage 0, production 1
 		processError("no text may follow \"end\"");
 }
 
-void progStmt()       // stage 0, production 2
+void Compiler::progStmt()       // stage 0, production 2
 {
    string x;
 	if (token != "program")
@@ -86,7 +102,7 @@ void progStmt()       // stage 0, production 2
 	insert(x,PROG_NAME,CONSTANT,x,NO,0);
 }
 
-void consts()         // stage 0, production 3
+void Compiler::consts()         // stage 0, production 3
 {
    if (token != "const")
  		processError("keyword \"const\" expected");
@@ -97,19 +113,20 @@ void consts()         // stage 0, production 3
  	constStmts();
 }
 
-void vars()           // stage 0, production 4
-{
-   tatic int c = 0; 
-	cout << "vars " << ++c << ":  " << token << endl; 
- 	if (token != "var")
+void Compiler::vars()           // stage 0, production 4
+{ 
+ 	if (token != "var") {
  		processError("keyword \"var\" expected");
+   }
 
-	if (!isNonKeyId(nextToken()))
+	if (!isNonKeyId(nextToken())) {
  		processError("non-keyword identifier must follow \"var\"");
+   }
+   
  	varStmts();
 }
 
-void beginEndStmt()   // stage 0, production 5
+void Compiler::beginEndStmt()   // stage 0, production 5
 {
     if (token != "begin")
  		processError("keyword \"begin\" expected");
@@ -124,7 +141,7 @@ void beginEndStmt()   // stage 0, production 5
  	code("end", ".", "");
 }
 
-void constStmts()     // stage 0, production 6
+void Compiler::constStmts()     // stage 0, production 6
 {
    static int c = 0; 
 	cout << "constStmt " << ++c << ":  " << token << endl; 
@@ -172,13 +189,13 @@ void constStmts()     // stage 0, production 6
  		constStmts();
 }
 
-void varStmts()       // stage 0, production 7
+void Compiler::varStmts()       // stage 0, production 7
 {
    string x,y;
 	static int c=0;
 	cout << "VARSTMTS " << ++c << endl;
- 	if (!->isNonKeyId(token))
- 		this->processError("non-keyword identifier expected");
+ 	if (!isNonKeyId(token))
+ 		processError("non-keyword identifier expected");
 
  	x = ids();
 	cout << ">> VARSTMTS ids " << x << endl;
@@ -221,7 +238,7 @@ void varStmts()       // stage 0, production 7
  		varStmts();
 }
 
-string ids()          // stage 0, production 8
+string Compiler::ids()          // stage 0, production 8
 {
    string temp, tempString;
  	if (!isNonKeyId(token))
@@ -237,8 +254,44 @@ string ids()          // stage 0, production 8
  	return tempString;
 }
 
-void insert(string externalName, storeTypes inType, modes inMode,
-              string inValue, allocation inAlloc, int inUnits)
+bool Compiler::isKeyword(string s) const
+{
+   return s == "program" || s == "begin" || s == "end" || s == "var" || s == "const" || s == "integer" || s == "boolean" || s == "true" || s == "false" || s == "not";
+}
+
+bool Compiler::isSpecialSymbol(char c) const
+{
+   return c =='=' || c == '+' || c == '-' || c == ';' || c == ':' || c ==  '.' || c == ',';
+}
+
+bool Compiler::isNonKeyId(string s) const
+{
+   return s == "_" || s == "" || isdigit(s.at(0)) || islower(s.at(0));
+}
+
+bool Compiler::isInteger(string s) const
+{
+   for(int i = 0; i < (int)token.length(); i++)
+   {
+		if(isdigit(token[i]))
+      {
+			return true;
+      }
+	}
+   return false;
+}
+
+bool Compiler::isBoolean(string s) const
+{
+   return token=="true" || token == "false";
+}
+
+bool Compiler::isLiteral(string s) const
+{
+   return isInteger(s) || isBoolean(s) || s == "-" || s == "+";
+}
+
+void Compiler::insert(string externalName, storeTypes inType, modes inMode, string inValue, allocation inAlloc, int inUnits)
 {
 	string name = externalName.substr(0, externalName.find(','));
 	externalName = externalName.substr(externalName.find(',')+1, externalName.length() - externalName.find(',') - 1);
@@ -275,7 +328,7 @@ void insert(string externalName, storeTypes inType, modes inMode,
 
 }
 
-storeTypes whichType(string name) // tells which data type a name has
+storeTypes Compiler::whichType(string name) // tells which data type a name has
 {
 	storeTypes datatype;
 	if (isLiteral(name))
@@ -291,7 +344,7 @@ storeTypes whichType(string name) // tells which data type a name has
  	return datatype;
 }
 
-string whichValue(string name) // tells which value a name has
+string Compiler::whichValue(string name) // tells which value a name has
 {
 	string value;
  	if (isLiteral(name))
@@ -314,7 +367,7 @@ string whichValue(string name) // tells which value a name has
    	return value;   
 }
 
-void code(string op, string operand1 = "", string operand2 = "")
+void Compiler::code(string op, string operand1, string operand2)
 {
 	if (op == "program")
    		emitPrologue(operand1);
@@ -324,8 +377,7 @@ void code(string op, string operand1 = "", string operand2 = "")
     		processError("compiler error since function code should not be called with  illegal arguments");
 }
 
-void emit(string label = "", string instruction = "", string operands = "",
-            string comment = "")
+void Compiler::emit(string label, string instruction, string operands, string comment)
 {
 	objectFile << left << setw(8) << label;
 	objectFile << left <<  setw(8) << instruction;
@@ -333,7 +385,7 @@ void emit(string label = "", string instruction = "", string operands = "",
 	objectFile << left << setw(8) << comment; 
 }
 
-void emitPrologue(string progName, string = "")
+void Compiler::emitPrologue(string progName, string)
 {
 	time_t now = time (NULL);
 	
@@ -345,13 +397,13 @@ void emitPrologue(string progName, string = "")
     emit("_start:");
 }
 
-void emitEpilogue(string = "", string = "")
+void Compiler::emitEpilogue(string, string)
 {
     emit("","Exit", "{0}");
     emitStorage();
 }
 
-void emitStorage()
+void Compiler::emitStorage()
 {
     map<string, SymbolTableEntry>::iterator itr;
     emit("SECTION", ".data", "", "");
@@ -368,7 +420,7 @@ void emitStorage()
 	}	
 }
 
-char nextChar() // returns the next character or END_OF_FILE marker
+char Compiler::nextChar() // returns the next character or END_OF_FILE marker
 {
 	sourceFile.get(ch);
 	
@@ -379,7 +431,7 @@ char nextChar() // returns the next character or END_OF_FILE marker
 	return ch;
 }
 
-string nextToken() // returns the next token or END_OF_FILE marker
+string Compiler::nextToken() // returns the next token or END_OF_FILE marker
 {
 	char nxtch;
 	token = "";
@@ -451,7 +503,7 @@ string nextToken() // returns the next token or END_OF_FILE marker
 	return token;
 }
 
-string genInternalName(storeTypes stype) const
+string Compiler::genInternalName(storeTypes stype) const
 {
 	int count = 0;
 	string iname;
@@ -471,7 +523,7 @@ string genInternalName(storeTypes stype) const
 	return iname + to_string(count);
 }
 
-void processError(string err)
+void Compiler::processError(string err)
 {
 	listingFile << err << endl;
 	errorCount++;
