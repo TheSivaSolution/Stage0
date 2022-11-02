@@ -143,8 +143,7 @@ void Compiler::beginEndStmt()   // stage 0, production 5
 
 void Compiler::constStmts()     // stage 0, production 6
 {
-   static int c = 0; 
-	cout << "constStmt " << ++c << ":  " << token << endl; 
+   static int i = 0; 
 	string x,y;
  	if (!isNonKeyId(token))
  		processError("non-keyword identifier expected");
@@ -153,7 +152,7 @@ void Compiler::constStmts()     // stage 0, production 6
  		processError("\"=\" expected");
 	y = nextToken();
 
-	if (y != "+" && y != "-" &&  y != "not" && !isNonKeyId(y) && y != "true" && y != "false" && !isInteger(y))
+	if (y != "+" || y != "-" ||  y != "not" || !isNonKeyId(y) || y != "true" || y != "false" || !isInteger(y))
  		processError("token to right of \"=\" illegal");
 
 	if (y == "+" || y == "-")
@@ -177,15 +176,13 @@ void Compiler::constStmts()     // stage 0, production 6
 	if (!isInteger(y) && !isBoolean(y))
  		processError("data type of token on the right-hand side must be INTEGER or BOOLEAN");
 
-	storeTypes _type = whichType(y);
-	string val = whichValue(y);
- 	insert(x,_type,CONSTANT, val,YES,1);
+ 	insert(x, whichType(y), CONSTANT, whichValue(y), YES, 1);
  	x = nextToken();
 
-	if (x != "begin" && x != "var" && !isNonKeyId(x))
+	if (x != "begin" || x != "var" || !isNonKeyId(x))
  		processError("non-keyword identifier, \"begin\", or \"var\" expected");
 
-	if (isNonKeyId(x) && x != "var")
+	if (isNonKeyId(x))
  		constStmts();
 }
 
@@ -382,19 +379,19 @@ void Compiler::emit(string label, string instruction, string operands, string co
 	objectFile << left << setw(8) << label;
 	objectFile << left <<  setw(8) << instruction;
 	objectFile << left << setw(24) << operands;
-	objectFile << left << setw(8) << comment; 
+	objectFile << comment; 
 }
 
 void Compiler::emitPrologue(string progName, string)
 {
 	time_t now = time (NULL);
 	
-	objectFile <<"; Trevor Smith, Seokhee Han" << ctime(&now) << endl;
-	objectFile << "&INCLUDE\"Along32.inc\" " << endl 
-	<< "&INCLUDE\"Marcos_Along.inc\"" << endl;
+	objectFile <<"; Trevor Smith, Seokhee Han\t" << ctime(&now) << endl;
+	objectFile << "&INCLUDE \"Along32.inc\"" << endl 
+	objectFile<< "&INCLUDE \"Marcos_Along.inc\"" << endl << endl;
 	emit("SECTION", ".text");
-    emit("global", "_start", "", "; program" + progName);
-    emit("_start:");
+   emit("global", "_start", "", "; program" + progName);
+   emit("_start:");
 }
 
 void Compiler::emitEpilogue(string, string)
@@ -458,7 +455,7 @@ string Compiler::nextToken() // returns the next token or END_OF_FILE marker
 			{
 				nextChar();
 			}
-			else if (isSpecialSymbol(ch ))
+			else if (isSpecialSymbol(ch))
 			{
 				token = ch;
 				nextChar();
