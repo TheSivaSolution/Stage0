@@ -240,61 +240,240 @@ string ids()          // stage 0, production 8
 void insert(string externalName, storeTypes inType, modes inMode,
               string inValue, allocation inAlloc, int inUnits)
 {
+	string name = externalName.substr(0, externalName.find(','));
+	externalName = externalName.substr(externalName.find(',')+1, externalName.length() - externalName.find(',') - 1);
+
+	int count = 0;
+ 	while (name != "")
+  	{	
 	
+		cout << "insert name " << name << " - " << count << endl;
+    		if (symbolTable.count(name) > 0)
+		{
+			cout << "Mult name def error: " << name << endl;
+			processError("\nmultiple name definition\n");
+		}
+    		else if (isKeyword(name))
+    		{
+	   		processError("illegal use of keyword");	
+		}   
+    		else
+    		{
+    			if (isupper(externalName.at(0)))
+				symbolTable.insert(pair<string, SymbolTableEntry>(externalName, SymbolTableEntry(name,inType, inMode, inValue, inAlloc, inUnits)));
+   			else
+				symbolTable.insert(pair<string, SymbolTableEntry>(name, SymbolTableEntry(genInternalName(inType),inType, inMode, inValue, inAlloc, inUnits)));
+    		}
+
+		if (name == externalName.substr(0, externalName.find(',')))
+            		break;
+
+		name = externalName.substr(0, externalName.find(','));
+		
+		externalName = externalName.substr(externalName.find(',')+1, externalName.length() - externalName.find(',') - 1);
+  	}
+
 }
 
 storeTypes whichType(string name) // tells which data type a name has
 {
-	
+	storeTypes datatype;
+	if (isLiteral(name))
+ 		if (isLiteral(name) && isBoolean(name))
+ 			datatype = BOOLEAN;
+ 		else
+ 			datatype = INTEGER;
+ 	else 
+		if (symbolTable.count(name) > 0)
+ 			datatype = symbolTable.at(name).getDataType();
+ 		else
+ 			processError("reference to undefined constant");
+ 	return datatype;
 }
 
 string whichValue(string name) // tells which value a name has
 {
-	
+	string value;
+ 	if (isLiteral(name))
+   	{
+		if (name == "false")
+      			value = "0";
+    		else if (name == "true")
+      			value = "-1"; 
+    		else value = name;
+   	}
+ 	else 
+   		if (symbolTable.find(name) != symbolTable.end())
+   		{
+	 		value = symbolTable.at(name).getValue();
+   		}    
+   		else
+   		{
+	 		processError("reference to undefined constant");  
+   		} 
+   	return value;   
 }
 
 void code(string op, string operand1 = "", string operand2 = "")
 {
-	
+	if (op == "program")
+   		emitPrologue(operand1);
+ 	else if (op == "end")
+    		emitEpilogue();
+ 	else
+    		processError("compiler error since function code should not be called with  illegal arguments");
 }
 
 void emit(string label = "", string instruction = "", string operands = "",
             string comment = "")
 {
-	
+	objectFile << left << setw(8) << label;
+	objectFile << left <<  setw(8) << instruction;
+	objectFile << left << setw(24) << operands;
+	objectFile << left << setw(8) << comment; 
 }
 
 void emitPrologue(string progName, string = "")
 {
+	time_t now = time (NULL);
 	
+	objectFile <<"; Trevor Smith, Seokhee Han" << ctime(&now) << endl;
+	objectFile << "&INCLUDE\"Along32.inc\" " << endl 
+	<< "&INCLUDE\"Marcos_Along.inc\"" << endl;
+	emit("SECTION", ".text");
+    emit("global", "_start", "", "; program" + progName);
+    emit("_start:");
 }
 
 void emitEpilogue(string = "", string = "")
 {
-	
+    emit("","Exit", "{0}");
+    emitStorage();
 }
 
 void emitStorage()
 {
-	
+    map<string, SymbolTableEntry>::iterator itr;
+    emit("SECTION", ".data", "", "");
+	for (itr = symbolTable.begin(); itr != symbolTable.end(); itr++) {
+       if(itr->second.getAlloc() == YES && itr->second.getMode() == CONSTANT){
+		emit(itr->second.getInternalName(), "dd",itr->second.getValue(),"; " +itr->first); 
+	   }
+	}			
+    emit("SECTION", ".bss", "", "");
+    for (itr = symbolTable.begin(); itr != symbolTable.end(); itr++) {
+	 if(itr->second.getAlloc() == YES && itr->second.getMode() == VARIABLE){
+		emit(itr->second.getInternalName(), "resd",itr->second.getValue(),"; " +itr->first);
+	   }
+	}	
 }
 
 char nextChar() // returns the next character or END_OF_FILE marker
 {
+	sourceFile.get(ch);
 	
+	ch = (sourceFile.eof()) ? END_OF_FILE : ch;
+
+	listingFile << ch;
+
+	return ch;
 }
 
 string nextToken() // returns the next token or END_OF_FILE marker
 {
+	char nxtch;
+	token = "";
+	while (token == "")
+	{
+			if (ch == '{')
+			{
+				nxtch = nextChar();
+				// process comment
+				while (nxtch != END_OF_FILE && nxtch != '}') {
+					nxtch = nextChar();
+				}
+				
+				if (ch == END_OF_FILE)
+					processError("unexpected end of file");
+				else
+					nextChar();
+			}
+			else if (ch == '}')
+			{
+				processError("'}' cannot begin token");
+			}
+			else if (isspace(ch))
+			{
+				nextChar();
+			}
+			else if (isSpecialSymbol(ch ))
+			{
+				token = ch;
+				nextChar();
+			}
+			else if (islower(ch))
+			{
+				token = ch;
+
+				nxtch = nextChar();
+				while ((islower(nxtch) || isdigit(nxtch) || nxtch == '_') && nxtch != END_OF_FILE )
+				{
+					token += ch;
+					nxtch = nextChar();
+				}
+				if (ch == END_OF_FILE)
+					processError("unexpected end of file");
+			}
+			else if (isdigit(ch))
+			{
+				token = ch;
+				nxtch = nextChar();
+				while (isdigit(nxtch) && nxtch != END_OF_FILE)
+				{
+				     token += ch;
+				}
+		
+				if (ch == END_OF_FILE)
+					processError("unexpected end of file");
+			}
+			else if (ch == END_OF_FILE)
+			{
+				cout << "END OF FILE " << endl;
+				token = ch;
+			}
+			else
+			{
+				processError("illegal symbol");
+			}
+	}
 	
+	cout << token << endl;
+	return token;
 }
 
 string genInternalName(storeTypes stype) const
 {
-	
+	int count = 0;
+	string iname;
+	for (auto i: symbolTable)
+	{
+		if (i.second.getDataType() == stype)
+			count++;
+	}
+
+	if (stype == INTEGER)
+		iname = "I";
+	else if (stype == BOOLEAN)
+		iname = 'B';
+	else if (stype == PROG_NAME)
+		iname = 'P';
+
+	return iname + to_string(count);
 }
 
 void processError(string err)
 {
-	
+	listingFile << err << endl;
+	errorCount++;
+	exit(0);
 }
