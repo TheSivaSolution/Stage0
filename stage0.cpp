@@ -268,6 +268,7 @@ bool Compiler::isNonKeyId(string s) const
 
 bool Compiler::isInteger(string s) const
 {
+   /*
    for(int i = 0; i < (int)token.length(); i++)
    {
 		if(isdigit(token[i]))
@@ -276,10 +277,30 @@ bool Compiler::isInteger(string s) const
       }
 	}
    return false;
+   */
+	if (symbolTable.count(s) > 0)
+	{
+		cout << "isInt " << s << endl;
+		return symbolTable.at(s).getDataType() == INTEGER;
+	}
+	else
+		try
+		{
+			stoi(s);
+		}
+		catch (...)
+		{
+			return false;
+		}
+	return true;
 }
 
 bool Compiler::isBoolean(string s) const
 {
+   if (symbolTable.count(s) > 0)
+   {
+      return symbolTable.at(s).getDataType() == BOOLEAN;
+   }
    return token=="true" || token == "false";
 }
 
