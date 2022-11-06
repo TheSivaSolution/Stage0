@@ -413,7 +413,7 @@ void Compiler::emit(string label, string instruction, string operands, string co
 	objectFile << left << setw(8) << label;
 	objectFile << left << setw(8) << instruction;
 	objectFile << left << setw(24) << operands;
-	objectFile << left << setw(8) << comment; 
+	objectFile << comment; 
 }
 
 void Compiler::emitPrologue(string progName, string operand2)
