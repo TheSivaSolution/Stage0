@@ -416,7 +416,7 @@ void Compiler::emit(string label, string instruction, string operands, string co
 	objectFile << left << setw(8) << comment; 
 }
 
-void Compiler::emitPrologue(string progName, string a)
+void Compiler::emitPrologue(string progName, string operand2)
 {
 	time_t now = time (NULL);
 	
