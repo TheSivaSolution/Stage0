@@ -52,7 +52,7 @@ void Compiler::parser()
 
 void Compiler::createListingTrailer()
 {
-   listingFile << endl << setw(15) << left << "COMPILATION TERMINATED" << errorCount << " ERRORS ENCOUNTERED" << endl;
+   listingFile << endl << setw(15) << left << "COMPILATION TERMINATED      " << errorCount << " ERROR ENCOUNTERED" << endl;
 }
 
 void Compiler::prog()           // stage 0, production 1
@@ -395,30 +395,28 @@ void Compiler::code(string op, string operand1, string operand2)
    }
 }
 
-void Compiler::emit(string label, string instruction, string operands, string comment)
+void Compiler::emit(string label, string instruction, string operands,string comment)
 {
-	objectFile << left << setw(8) << label;
-	objectFile << left <<  setw(8) << instruction;
-	objectFile << left << setw(24) << operands;
-	objectFile << comment; 
+	objectFile << left << setw(8) << label << setw(8)  << instruction << setw(24) << operands << comment << endl; 
 }
 
 void Compiler::emitPrologue(string progName, string operand2)
 {
 	time_t now = time (NULL);
 	
-	objectFile <<"; Trevor Smith, Seokhee Han\t" << ctime(&now) << endl;
-	objectFile << "&INCLUDE \"Along32.inc\"" << endl;
-	objectFile << "&INCLUDE \"Marcos_Along.inc\"" << endl;
+	objectFile << "; Trevor Smith, Seokhee Han\t" << ctime(&now) << endl;
+	objectFile << "%INCLUDE \"Along32.inc\"" << endl;
+	objectFile << "%INCLUDE \"Macros_Along.inc\"\n" << endl;
 	emit("SECTION", ".text");
    emit("global", "_start", "", "; program" + progName);
+   objectFile << endl;
    emit("_start:");
 }
 
 void Compiler::emitEpilogue(string, string)
 {
-    emit("","Exit", "{0}");
-    emitStorage();
+   emit("","Exit", "{0}", "\n");
+   emitStorage();
 }
 
 //I really just got no idea
@@ -517,13 +515,20 @@ string Compiler::nextToken() // returns the next token or END_OF_FILE marker
 
 char Compiler::nextChar() // returns the next character or END_OF_FILE marker
 {
-	sourceFile.get(ch);
-	
-	ch = (sourceFile.eof()) ? END_OF_FILE : ch;
-
-	// print to listing file
-	listingFile << ch;
-
+	sourceFile.get(ch);       //why is this causing an issue
+	static char lastChar = '\n';
+	if(sourceFile.eof())
+		return END_OF_FILE;
+	else
+	{
+		if (lastChar == '\n')
+		{
+			lineNo++;
+			listingFile<< right << setw(5) << lineNo << '|';
+		}
+		listingFile << ch;
+	}
+	lastChar = ch;
 	return ch;
 }
 
@@ -549,9 +554,10 @@ string Compiler::genInternalName(storeTypes stype) const
 
 void Compiler::processError(string err)
 {
-	listingFile << err << endl;
+	listingFile << "\nError: Line " << lineNo << ": " << err << endl;
 	errorCount++;
-	exit(0);
+   createListingTrailer();
+	exit(EXIT_FAILURE);
 }
 
 bool Compiler::isKeyword(string s) const
