@@ -411,21 +411,21 @@ void Compiler::code(string op, string operand1, string operand2)
 void Compiler::emit(string label, string instruction, string operands, string comment)
 {
 	objectFile << left << setw(8) << label;
-	objectFile << left <<  setw(8) << instruction;
+	objectFile << left << setw(8) << instruction;
 	objectFile << left << setw(24) << operands;
-	objectFile << comment; 
+	objectFile << left << setw(8) << comment; 
 }
 
-void Compiler::emitPrologue(string progName, string operand2)
+void Compiler::emitPrologue(string progName, string a)
 {
 	time_t now = time (NULL);
 	
 	objectFile <<"; Trevor Smith, Seokhee Han\t" << ctime(&now) << endl;
 	objectFile << "&INCLUDE \"Along32.inc\"" << endl;
 	objectFile << "&INCLUDE \"Marcos_Along.inc\"" << endl << endl;
-	emit("SECTION", ".text");
-   emit("global", "_start", "", "; program" + progName);
-   emit("_start:");
+        emit("SECTION", ".text");
+        emit("global", "_start", "", "; program" + progName);
+        emit("_start:");
 }
 
 void Compiler::emitEpilogue(string, string)
