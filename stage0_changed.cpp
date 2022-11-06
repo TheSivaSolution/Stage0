@@ -421,8 +421,8 @@ void Compiler::emitPrologue(string progName, string operand2)
 	time_t now = time (NULL);
 	
 	objectFile <<"; Trevor Smith, Seokhee Han\t" << ctime(&now) << endl;
-	objectFile << "&INCLUDE \"Along32.inc\"" << endl;
-	objectFile << "&INCLUDE \"Marcos_Along.inc\"" << endl << endl;
+	objectFile << "%INCLUDE \"Along32.inc\"" << endl;
+	objectFile << "%INCLUDE \"Macros_Along.inc\"" << endl << endl;
         emit("SECTION", ".text");
         emit("global", "_start", "", "; program" + progName);
         emit("_start:");
