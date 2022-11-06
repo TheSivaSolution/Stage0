@@ -22,11 +22,11 @@ Compiler::Compiler(char **argv) // constructor
    objectFile.open(argv[3]);
 }
 
-Compiler::~Compiler()           // destructor
+Compiler::~Compiler() // Destructor
 {
    sourceFile.close();
-   listingFile.close();
-   objectFile.close();
+	listingFile.close();
+	objectFile.close();
 }
 
 void Compiler::createListingHeader()
@@ -34,7 +34,6 @@ void Compiler::createListingHeader()
    time_t now = time (NULL);
    listingFile << left << "STAGE0:  Trevor Smith, Seokhee Han\t" << ctime(&now) << endl;
    listingFile << left << setw(15) << "LINE NO:" << "SOURCE STATEMENT" << endl << endl;
-   
 }
 
 void Compiler::parser()
@@ -47,7 +46,7 @@ void Compiler::parser()
       processError("keyword \"program\" expected");
    }
    
-   prog();
+   prog();  	                                          //parser implements the grammar rules, calling first rule
 }
 
 void Compiler::createListingTrailer()
@@ -182,7 +181,7 @@ void Compiler::constStmts()     // stage 0, production 6
    
 	y = nextToken();
 
-	if (y != "+" || y != "-" ||  y != "not" || !isNonKeyId(y) || y != "true" || y != "false" || !isInteger(y))
+	if (y != "+" && y != "-" &&  y != "not" && !isNonKeyId(y) && y != "true" && y != "false" && !isInteger(y))
    {
       processError("token to right of \"=\" illegal");
    }
@@ -213,23 +212,25 @@ void Compiler::constStmts()     // stage 0, production 6
  		processError("semicolon expected");
    }
 
-	if (!isInteger(y) || !isBoolean(y))
+	if (!isInteger(y) && !isBoolean(y))
    {
  		processError("data type of token on the right-hand side must be INTEGER or BOOLEAN");
    }
-
+   
+	// TODO whichtype
  	insert(x, whichType(y), CONSTANT, whichValue(y), YES, 1);
  	x = nextToken();
 
-	if (x != "begin" && x != "var" && !isNonKeyId(x))
+   if (x != "begin" && x != "var" && !isNonKeyId(x))
    {
  		processError("non-keyword identifier, \"begin\", or \"var\" expected");
    }
 
-	if (isNonKeyId(x))
+	if (isNonKeyId(x) && x != "var")
    {
  		constStmts();
    }
+
 }
 
 void Compiler::varStmts()       // stage 0, production 7
@@ -296,7 +297,55 @@ string Compiler::ids()          // stage 0, production 8
  	return tempString;
 }
 
-//Need of looking at
+  // Helper functions for the Pascallite lexicon
+bool Compiler::isKeyword(string s) const  // determines if s is a keyword
+{
+	return s == "program" || s == "begin" || s == "end" || s == "var" || s == "const" || s == "integer" || s == "boolean" || s == "true" || s == "false" || s == "not";
+}
+
+bool Compiler::isSpecialSymbol(char c) const
+{
+   return c == '=' || c == '+' || c == '-' || c == ';' || c == ':' || c ==  '.' || c == ',';
+}
+
+bool Compiler::isNonKeyId(string s) const
+{
+   return s == "_" || s == "" || isdigit(s.at(0)) || islower(s.at(0));
+}
+
+bool Compiler::isInteger(string s) const
+{
+	if (symbolTable.count(s) > 0)
+	{
+		return symbolTable.at(s).getDataType() == INTEGER;
+	}
+	else
+		try
+		{
+			stoi(s);
+		}
+		catch (...)
+		{
+			return false;
+		}
+	return true;
+}
+
+bool Compiler::isBoolean(string s) const  // determines if s is a boolean
+{
+	if (symbolTable.count(s) > 0)
+	{
+		return symbolTable.at(s).getDataType() == BOOLEAN;
+	}
+	return s == "true" || s == "false";
+}
+	
+bool Compiler::isLiteral(string s) const
+{
+   return isInteger(s) || isBoolean(s) || s == "-" || s == "+";
+}
+
+  // Action routines
 void Compiler::insert(string externalName, storeTypes inType, modes inMode, string inValue, allocation inAlloc, int inUnits)
 {
 	string name = externalName.substr(0, externalName.find(','));
@@ -357,7 +406,6 @@ storeTypes Compiler::whichType(string name) // tells which data type a name has
  	return datatype;
 }
 
-//Need of looking at
 string Compiler::whichValue(string name) // tells which value a name has
 {
 	string value;
@@ -419,7 +467,6 @@ void Compiler::emitEpilogue(string, string)
    emitStorage();
 }
 
-//I really just got no idea
 void Compiler::emitStorage()
 {
    map<string, SymbolTableEntry>::iterator itr;
@@ -438,6 +485,21 @@ void Compiler::emitStorage()
 	   }
 	}	
 }
+
+  char Compiler::nextChar() // returns the next character or END_OF_FILE marker
+  {
+	sourceFile.get(ch);
+   
+	ch = (sourceFile.eof()) ? END_OF_FILE : ch;
+
+	// print to listing file
+	listingFile << ch;
+
+	return ch;
+   
+
+   
+  }
 
 string Compiler::nextToken() // returns the next token or END_OF_FILE marker
 {
@@ -471,6 +533,7 @@ string Compiler::nextToken() // returns the next token or END_OF_FILE marker
 			{
 				token = ch;
 				nextChar();
+            
 			}
 			else if (islower(ch))
 			{
@@ -513,25 +576,6 @@ string Compiler::nextToken() // returns the next token or END_OF_FILE marker
 	return token;
 }
 
-char Compiler::nextChar() // returns the next character or END_OF_FILE marker
-{
-	sourceFile.get(ch);       //why is this causing an issue
-	static char lastChar = '\n';
-	if(sourceFile.eof())
-		return END_OF_FILE;
-	else
-	{
-		if (lastChar == '\n')
-		{
-			lineNo++;
-			listingFile<< right << setw(5) << lineNo << '|';
-		}
-		listingFile << ch;
-	}
-	lastChar = ch;
-	return ch;
-}
-
 string Compiler::genInternalName(storeTypes stype) const
 {
 	int count = 0;
@@ -558,51 +602,4 @@ void Compiler::processError(string err)
 	errorCount++;
    createListingTrailer();
 	exit(EXIT_FAILURE);
-}
-
-bool Compiler::isKeyword(string s) const
-{
-   return s == "program" || s == "begin" || s == "end" || s == "var" || s == "const" || s == "integer" || s == "boolean" || s == "true" || s == "false" || s == "not";
-}
-
-bool Compiler::isSpecialSymbol(char c) const
-{
-   return c =='=' || c == '+' || c == '-' || c == ';' || c == ':' || c ==  '.' || c == ',';
-}
-
-bool Compiler::isNonKeyId(string s) const
-{
-   return s == "_" || s == "" || isdigit(s.at(0)) || islower(s.at(0));
-}
-
-bool Compiler::isInteger(string s) const
-{
-	if (symbolTable.count(s) > 0)
-	{
-		return symbolTable.at(s).getDataType() == INTEGER;
-	}
-	else
-		try
-		{
-			stoi(s);
-		}
-		catch (...)
-		{
-			return false;
-		}
-	return true;
-}
-
-bool Compiler::isBoolean(string s) const
-{
-   if (symbolTable.count(s) > 0)
-   {
-      return symbolTable.at(s).getDataType() == BOOLEAN;
-   }
-   return token=="true" || token == "false";
-}
-
-bool Compiler::isLiteral(string s) const
-{
-   return isInteger(s) || isBoolean(s) || s == "-" || s == "+";
 }
