@@ -53,6 +53,10 @@ void Compiler::parser()
 
 void Compiler::createListingTrailer()
 {
+	if(errorCount == 1) {
+		 listingFile << endl << setw(15) << left << "COMPILATION TERMINATED      " << errorCount << " ERROR ENCOUNTERED" << endl;
+	}
+	
    listingFile << endl << setw(15) << left << "COMPILATION TERMINATED      " << errorCount << " ERRORS ENCOUNTERED" << endl;
 }
 
@@ -458,7 +462,7 @@ void Compiler::emitPrologue(string progName, string operand2)
 	objectFile << "%INCLUDE \"Along32.inc\"" << endl;
 	objectFile << "%INCLUDE \"Macros_Along.inc\"\n" << endl;
 	emit("SECTION", ".text");
-   emit("global", "_start", "", "; program" + progName);
+   emit("global", "_start", "", "; program " + progName);
    objectFile << endl;
    emit("_start:");
 }
