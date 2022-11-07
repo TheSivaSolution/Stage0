@@ -31,9 +31,11 @@ Compiler::~Compiler() // Destructor
 
 void Compiler::createListingHeader()
 {
+   lineNo++;
    time_t now = time (NULL);
    listingFile << left << "STAGE0:  Trevor Smith, Seokhee Han\t" << ctime(&now) << endl;
    listingFile << left << setw(15) << "LINE NO:" << "SOURCE STATEMENT" << endl << endl;
+   listingFile << right << setw(5) << lineNo << '|';
 }
 
 void Compiler::parser()
@@ -51,7 +53,7 @@ void Compiler::parser()
 
 void Compiler::createListingTrailer()
 {
-   listingFile << endl << setw(15) << left << "COMPILATION TERMINATED      " << errorCount << " ERROR ENCOUNTERED" << endl;
+   listingFile << endl << setw(15) << left << "COMPILATION TERMINATED      " << errorCount << " ERRORS ENCOUNTERED" << endl;
 }
 
 void Compiler::prog()           // stage 0, production 1
@@ -471,12 +473,14 @@ void Compiler::emitStorage()
 {
    map<string, SymbolTableEntry>::iterator itr;
    emit("SECTION", ".data", "", "");
+   emit("", "", "", "");
 	for (itr = symbolTable.begin(); itr != symbolTable.end(); itr++) 
    {
       if(itr->second.getAlloc() == YES && itr->second.getMode() == CONSTANT){
          emit(itr->second.getInternalName(), "dd",itr->second.getValue(),"; " +itr->first); 
 	   }
-	}			
+	}
+   
    emit("SECTION", ".bss", "", "");
    for (itr = symbolTable.begin(); itr != symbolTable.end(); itr++) 
    {
@@ -486,20 +490,38 @@ void Compiler::emitStorage()
 	}	
 }
 
-  char Compiler::nextChar() // returns the next character or END_OF_FILE marker
-  {
+char Compiler::nextChar() // returns the next character or END_OF_FILE marker
+{
 	sourceFile.get(ch);
    
 	ch = (sourceFile.eof()) ? END_OF_FILE : ch;
-
-	// print to listing file
-	listingFile << ch;
-
+   
+  if (ch == '\n')
+   {
+      if(nextChar() == '$')
+      {
+         listingFile << endl;
+         return END_OF_FILE;
+      }
+      else
+      {
+         lineNo++;
+         listingFile << endl;
+         listingFile << right << setw(5) << lineNo << '|';
+      }
+   }
+   else if (ch == END_OF_FILE)
+   {
+      return END_OF_FILE;
+   }
+   else
+   {
+      listingFile << ch;
+   }
+   
 	return ch;
    
-
-   
-  }
+}
 
 string Compiler::nextToken() // returns the next token or END_OF_FILE marker
 {
