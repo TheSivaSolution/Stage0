@@ -53,11 +53,11 @@ void Compiler::parser()
 
 void Compiler::createListingTrailer()
 {
-	if(errorCount == 1) {
+   listingFile << endl << setw(15) << left << "COMPILATION TERMINATED      " << errorCount << " ERRORS ENCOUNTERED" << endl;
+
+  if(errorCount == 1) {
 		 listingFile << endl << setw(15) << left << "COMPILATION TERMINATED      " << errorCount << " ERROR ENCOUNTERED" << endl;
 	}
-	
-   listingFile << endl << setw(15) << left << "COMPILATION TERMINATED      " << errorCount << " ERRORS ENCOUNTERED" << endl;
 }
 
 void Compiler::prog()           // stage 0, production 1
