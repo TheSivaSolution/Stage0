@@ -512,6 +512,7 @@ char Compiler::nextChar() // returns the next character or END_OF_FILE marker
          lineNo++;
          listingFile << endl;
          listingFile << right << setw(5) << lineNo << '|';
+         return ch; // made some changes, don't forget 
       }
    }
    else if (ch == END_OF_FILE)
@@ -521,9 +522,9 @@ char Compiler::nextChar() // returns the next character or END_OF_FILE marker
    else
    {
       listingFile << ch;
+      return ch;
    }
    
-	return ch;
    
 }
 
