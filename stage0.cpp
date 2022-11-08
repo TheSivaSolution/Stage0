@@ -15,14 +15,14 @@
 
 using namespace std;
 
-Compiler::Compiler(char **argv) // constructor
+Compiler::Compiler(char **argv)
 {
    sourceFile.open(argv[1]);
    listingFile.open(argv[2]);
    objectFile.open(argv[3]);
 }
 
-Compiler::~Compiler() // Destructor
+Compiler::~Compiler()
 {
    sourceFile.close();
 	listingFile.close();
@@ -53,14 +53,15 @@ void Compiler::parser()
 
 void Compiler::createListingTrailer()
 {
-    if(errorCount == 1) {
-	listingFile << endl << setw(15) << left << "COMPILATION TERMINATED      " << errorCount << " ERROR ENCOUNTERED" << endl;
-     }
-    else
-   listingFile << endl << setw(15) << left << "COMPILATION TERMINATED      " << errorCount << " ERRORS ENCOUNTERED" << endl;
+   if(errorCount == 1) {
+      listingFile << endl << setw(15) << left << "COMPILATION TERMINATED      " << errorCount << " ERROR ENCOUNTERED" << endl;
+   }
+   else {
+      listingFile << endl << setw(15) << left << "COMPILATION TERMINATED      " << errorCount << " ERRORS ENCOUNTERED" << endl;
+   }
 }
 
-void Compiler::prog()           // stage 0, production 1
+void Compiler::prog()
 {
    if (token != "program")
    {
@@ -92,7 +93,7 @@ void Compiler::prog()           // stage 0, production 1
    }
 }
 
-void Compiler::progStmt()       // stage 0, production 2
+void Compiler::progStmt()
 {
    string x;
 	if (token != "program")
@@ -119,7 +120,7 @@ void Compiler::progStmt()       // stage 0, production 2
 	insert(x, PROG_NAME,CONSTANT, x, NO, 0);
 }
 
-void Compiler::consts()         // stage 0, production 3
+void Compiler::consts()
 {
    if (token != "const")
    {
@@ -134,7 +135,7 @@ void Compiler::consts()         // stage 0, production 3
  	constStmts();
 }
 
-void Compiler::vars()           // stage 0, production 4
+void Compiler::vars()
 { 
  	if (token != "var") 
    {
@@ -149,7 +150,7 @@ void Compiler::vars()           // stage 0, production 4
  	varStmts();
 }
 
-void Compiler::beginEndStmt()   // stage 0, production 5
+void Compiler::beginEndStmt()
 {
    if (token != "begin")
    {
@@ -170,7 +171,7 @@ void Compiler::beginEndStmt()   // stage 0, production 5
  	code("end", ".", "");
 }
 
-void Compiler::constStmts()     // stage 0, production 6
+void Compiler::constStmts()
 {
 	string x,y;
  	if (!isNonKeyId(token))
@@ -239,7 +240,7 @@ void Compiler::constStmts()     // stage 0, production 6
 
 }
 
-void Compiler::varStmts()       // stage 0, production 7
+void Compiler::varStmts()
 {
    string x,y;
  	if (!isNonKeyId(token))
@@ -282,7 +283,7 @@ void Compiler::varStmts()       // stage 0, production 7
    }
 }
 
-string Compiler::ids()          // stage 0, production 8
+string Compiler::ids()
 {
    string temp, tempString;
  	if (!isNonKeyId(token))
@@ -303,8 +304,7 @@ string Compiler::ids()          // stage 0, production 8
  	return tempString;
 }
 
-  // Helper functions for the Pascallite lexicon
-bool Compiler::isKeyword(string s) const  // determines if s is a keyword
+bool Compiler::isKeyword(string s) const
 {
 	return s == "program" || s == "begin" || s == "end" || s == "var" || s == "const" || s == "integer" || s == "boolean" || s == "true" || s == "false" || s == "not";
 }
@@ -337,7 +337,7 @@ bool Compiler::isInteger(string s) const
 	return true;
 }
 
-bool Compiler::isBoolean(string s) const  // determines if s is a boolean
+bool Compiler::isBoolean(string s) const
 {
 	if (symbolTable.count(s) > 0)
 	{
@@ -351,7 +351,6 @@ bool Compiler::isLiteral(string s) const
    return isInteger(s) || isBoolean(s) || s == "-" || s == "+";
 }
 
-  // Action routines
 void Compiler::insert(string externalName, storeTypes inType, modes inMode, string inValue, allocation inAlloc, int inUnits)
 {
 	string name = externalName.substr(0, externalName.find(','));
@@ -368,7 +367,7 @@ void Compiler::insert(string externalName, storeTypes inType, modes inMode, stri
     	else
     		{
     			if (isupper(externalName.at(0))) {
-               symbolTable.insert(pair<string, SymbolTableEntry>(externalName, SymbolTableEntry(name, inType, inMode, inValue, inAlloc, inUnits)));
+               symbolTable.insert(pair<string, SymbolTableEntry>(name, SymbolTableEntry(name, inType, inMode, inValue, inAlloc, inUnits)));
             }
    			else {
                symbolTable.insert(pair<string, SymbolTableEntry>(name, SymbolTableEntry(genInternalName(inType),inType, inMode, inValue, inAlloc, inUnits)));
@@ -387,7 +386,7 @@ void Compiler::insert(string externalName, storeTypes inType, modes inMode, stri
 
 }
 
-storeTypes Compiler::whichType(string name) // tells which data type a name has
+storeTypes Compiler::whichType(string name)
 {
    storeTypes datatype;
    
@@ -412,7 +411,7 @@ storeTypes Compiler::whichType(string name) // tells which data type a name has
  	return datatype;
 }
 
-string Compiler::whichValue(string name) // tells which value a name has
+string Compiler::whichValue(string name)
 {
 	string value;
  	if (isLiteral(name))
@@ -462,7 +461,7 @@ void Compiler::emitPrologue(string progName, string operand2)
 	objectFile << "%INCLUDE \"Along32.inc\"" << endl;
 	objectFile << "%INCLUDE \"Macros_Along.inc\"\n" << endl;
 	emit("SECTION", ".text");
-   emit("global", "_start", "", "; program " + progName);
+   emit("global", "_start", "", "; program" + progName);
    objectFile << endl;
    emit("_start:");
 }
@@ -475,26 +474,36 @@ void Compiler::emitEpilogue(string, string)
 
 void Compiler::emitStorage()
 {
-   map<string, SymbolTableEntry>::iterator itr;
-   emit("SECTION", ".data", "", "");
-   emit("", "", "", "");
-	for (itr = symbolTable.begin(); itr != symbolTable.end(); itr++) 
-   {
-      if(itr->second.getAlloc() == YES && itr->second.getMode() == CONSTANT){
-         emit(itr->second.getInternalName(), "dd",itr->second.getValue(),"; " +itr->first); 
-	   }
+   map<string, SymbolTableEntry>::iterator it;
+	
+	emit("SECTION", ".data");
+	for (it = symbolTable.begin(); it != symbolTable.end(); it++)
+	{
+		if(it->second.getInternalName().at(0) == 'B'&& it->second.getValue() == "false" )
+			emit(it->second.getInternalName(), "dd", "0", "; " + it->first);
+		else if(it->second.getInternalName().at(0) == 'B' && it->second.getValue() == "true" )
+			emit(it->second.getInternalName(), "dd", "-1", "; " + it->first);
+		else if (it->second.getInternalName() == "TRUE")
+			emit(it->second.getInternalName(), "dd", "-1", "; " + it->first);
+		else if (it->second.getInternalName() == "FALSE")
+			emit(it->second.getInternalName(), "dd", "0", "; " + it->first);
+		else if(it->second.getAlloc() == YES && it->second.getMode() == CONSTANT)
+		{
+			emit(it->second.getInternalName(), "dd", it->second.getValue(), "; " + it->first);
+		}
 	}
-   
-   emit("SECTION", ".bss", "", "");
-   for (itr = symbolTable.begin(); itr != symbolTable.end(); itr++) 
-   {
-      if(itr->second.getAlloc() == YES && itr->second.getMode() == VARIABLE){
-         emit(itr->second.getInternalName(), "resd",itr->second.getValue(),"; " +itr->first);
-	   }
-	}	
+	
+	emit("\nSECTION", " .bss");
+	for (it = symbolTable.begin(); it != symbolTable.end(); it++)
+	{
+		if(it->second.getAlloc() == YES && it->second.getMode() == VARIABLE)
+		{
+			emit(it->second.getInternalName(), "resd", "1", "; " + it->first);
+		}
+	}
 }
 
-char Compiler::nextChar() // returns the next character or END_OF_FILE marker
+char Compiler::nextChar()
 {
 	sourceFile.get(ch);
    
@@ -525,10 +534,9 @@ char Compiler::nextChar() // returns the next character or END_OF_FILE marker
       return ch;
    }
    
-   
 }
 
-string Compiler::nextToken() // returns the next token or END_OF_FILE marker
+string Compiler::nextToken()
 {
 	char nxtChar;
 	token = "";
@@ -607,18 +615,26 @@ string Compiler::genInternalName(storeTypes stype) const
 {
 	int count = 0;
 	string iname;
+   
 	for (auto i: symbolTable)
 	{
-		if (i.second.getDataType() == stype)
+		if (i.second.getDataType() == stype) {
 			count++;
+      }
 	}
 
 	if (stype == INTEGER)
+   {
 		iname = "I";
+   }
 	else if (stype == BOOLEAN)
+   {
 		iname = 'B';
+   }
 	else if (stype == PROG_NAME)
+   {
 		iname = 'P';
+   }
 
 	return iname + to_string(count);
 }
