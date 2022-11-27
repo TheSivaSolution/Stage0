@@ -59,6 +59,8 @@ void Compiler::createListingTrailer()
 void Compiler::processError(string err)
 {
 	listingFile << "\nError on line " << lineNo  <<' '<< err << endl;
+	errorCount++;
+   createListingTrailer();
 	exit(EXIT_FAILURE);
 }
 
@@ -190,6 +192,11 @@ void Compiler::constStmts()
    
 	y = nextToken();
    
+   if (y == "var")
+   {
+      vars();
+   }
+   
 	if (y != "+" && y != "-" && y != "not" && !isNonKeyId(y) && y != "true" && y != "false" && !isInteger(y))
    {
 		processError("token to right of \"=\" illegal");
@@ -221,10 +228,10 @@ void Compiler::constStmts()
 		processError("semicolon expected");
    }
    
-	map<string, SymbolTableEntry>::iterator it;
+   map<string, SymbolTableEntry>::iterator it;
 	it = symbolTable.find(y);
    
-	if (!isBoolean(y) && !isInteger(y))
+	if (!isInteger(y) && !isBoolean(y) && it->second.getDataType() != BOOLEAN )
    {      
 		processError("data type of token on the right-hand side must be INTEGER or BOOLEAN");
    }
@@ -237,7 +244,7 @@ void Compiler::constStmts()
 		processError("non-keyword identifier, \"begin\", or \"var\" expected"); 
    }
    
-	if (isNonKeyId(x))
+	if (isNonKeyId(x)&& x != "var")
    {
 		constStmts();
    }
@@ -870,7 +877,7 @@ void Compiler::emitReadCode(string operand, string operand2)
    }
    
 	emit("","call", "ReadInt", "; read int; value placed in eax");
-	emit(" ","mov", '[' + it->second.getInternalName() + "],eax", "; store eax at "+ operand);
+	emit(" ","mov", '[' + it->second.getInternalName() + "],eax", "; store eax at " + operand);
 	contentsOfAReg = operand;
 }
 
